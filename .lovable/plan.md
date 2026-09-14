@@ -1,33 +1,38 @@
-# Fix browserslist CVE-2026-73088 security alert
+# Fix GitHub security alerts (browserslist, brace-expansion, js-yaml, PostCSS, Vite)
 
 ## Goal
-Resolve the GitHub Dependabot/security alert for `browserslist` (CVE-2026-73088) in `package-lock.json` and ensure the project no longer ships the vulnerable version.
+Resolve all open GitHub Dependabot alerts in one pass by upgrading the vulnerable packages and regenerating the lockfiles.
 
-## Current state
-- `package-lock.json` pins `browserslist@4.24.2`.
-- `bun.lockb` (binary) is also present, so the repo has two lockfiles.
-- `browserslist` is a transitive dependency of `autoprefixer` → `postcss`.
-- Latest patched `browserslist` is `4.28.9`.
+## Vulnerabilities found in the lockfile
+
+| Package | Current | Latest | Issue |
+|---|---|---|---|
+| browserslist | 4.24.2 | 4.28.9 | CVE-2026-73088 — crash/prototype write via custom stats |
+| brace-expansion | 1.1.11 | 5.0.9 | DoS via exponential-time expansion |
+| js-yaml | 4.1.0 | 5.4.2 | Merge-key chains cause quadratic CPU use |
+| postcss | 8.4.47 | 8.5.28 | Arbitrary file read via sourceMappingURL in CSS comments |
+| vite | 5.4.10 | 8.3.0 | server.fs.deny bypass on Windows alternate paths |
+
+`browserslist`, `brace-expansion`, and `js-yaml` are pulled in transitively (via `autoprefixer`, `eslint`, etc.). `postcss`, `vite`, and `autoprefixer` are direct devDependencies.
 
 ## Plan
 
 1. **Convert binary Bun lockfile to text**
-   - Run `bun install --save-text-lockfile` to produce a readable `bun.lock`.
-   - Remove the old binary `bun.lockb` so scanners and GitHub can inspect the lockfile.
+   - Run `bun install --save-text-lockfile` to produce a readable `bun.lock`, and remove the old binary `bun.lockb` so GitHub and scanners can inspect it.
 
-2. **Upgrade browserslist and its parent dependencies**
-   - Update `autoprefixer` and `postcss` to their latest compatible versions, which will pull a patched `browserslist`.
-   - If the transitive update alone does not clear the alert, add an `overrides` entry in `package.json` to force `browserslist` to the patched version.
+2. **Upgrade direct dependencies in package.json**
+   - Bump `postcss`, `autoprefixer`, and `vite` (plus related tooling such as `@vitejs/plugin-react-swc` if needed) to their latest compatible versions.
 
-3. **Regenerate `package-lock.json`**
-   - Run `npm install` (or `npm update browserslist`) so `package-lock.json` is in sync with `package.json` and contains the fixed version.
+3. **Force-patched versions for transitive packages**
+   - Add an `overrides` block in `package.json` pinning `browserslist`, `brace-expansion`, and `js-yaml` to patched versions so nested dependencies cannot reintroduce the vulnerable ones.
 
-4. **Verify the vulnerable version is gone**
-   - Search both lockfiles to confirm no `browserslist` version older than the patched one remains.
-   - Run the project build (`vite build`) to ensure the dependency update does not break compilation.
+4. **Regenerate package-lock.json**
+   - Run a fresh `npm install` so `package-lock.json` is in sync and free of the flagged versions (this also keeps your GitHub Actions `npm ci` step working).
 
-5. **Close the security finding**
-   - If a persisted finding exists in the Lovable security dashboard, mark it as fixed after the lockfiles are updated and the build succeeds.
+5. **Verify**
+   - Confirm none of the vulnerable versions remain in either lockfile.
+   - Run `vite build` to ensure the upgrades (especially the Vite major bump) do not break the site.
+   - If the Vite major upgrade breaks the build, fall back to the latest patched 5.x/6.x line instead and note it.
 
 ## Outcome
-The repository will contain only text lockfiles, `browserslist` will be on a CVE-free version, and the GitHub security alert will be resolved.
+All five GitHub security alerts will be resolved, both lockfiles will be text-based and scanner-friendly, and the site will still build and deploy to GitHub Pages/AWS S3 as before.
