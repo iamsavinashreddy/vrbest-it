@@ -1,4 +1,4 @@
-# Fix GitHub security alerts (browserslist, brace-expansion, js-yaml, PostCSS, Vite)
+# Fix GitHub security alerts (browserslist, brace-expansion, js-yaml x2, PostCSS, Vite)
 
 ## Goal
 Resolve all open GitHub Dependabot alerts in one pass by upgrading the vulnerable packages and regenerating the lockfiles.
@@ -9,7 +9,7 @@ Resolve all open GitHub Dependabot alerts in one pass by upgrading the vulnerabl
 |---|---|---|---|
 | browserslist | 4.24.2 | 4.28.9 | CVE-2026-73088 — crash/prototype write via custom stats |
 | brace-expansion | 1.1.11 | 5.0.9 | DoS via exponential-time expansion |
-| js-yaml | 4.1.0 | 5.4.2 | Merge-key chains cause quadratic CPU use |
+| js-yaml | 4.1.0 | 5.4.2 | Two alerts: merge-key chains cause quadratic CPU use; maxTotalMergeKeys does not limit CPU for empty merge sources |
 | postcss | 8.4.47 | 8.5.28 | Arbitrary file read via sourceMappingURL in CSS comments |
 | vite | 5.4.10 | 8.3.0 | server.fs.deny bypass on Windows alternate paths |
 
