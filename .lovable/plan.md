@@ -1,4 +1,4 @@
-# Fix GitHub security alerts (browserslist, brace-expansion, js-yaml, PostCSS, Vite)
+# Fix GitHub security alerts (browserslist, brace-expansion, js-yaml x2, PostCSS, Vite)
 
 ## Goal
 Resolve all open GitHub Dependabot alerts in one pass by upgrading the vulnerable packages and regenerating the lockfiles.
